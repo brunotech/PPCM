@@ -157,7 +157,7 @@ def change_trainable(module, trainable, verbose=False):
 
     if verbose:
         action = 'Unfroze' if trainable else 'Froze'
-        if verbose: print("{} {}".format(action, module))
+        print(f"{action} {module}")
 
 
 def find_f1_threshold(model, val_gen, test_gen, average='binary'):
@@ -223,11 +223,13 @@ def finetune(model, texts, labels, nb_classes, batch_size, method,
     """
 
     if method not in FINETUNING_METHODS:
-        raise ValueError('ERROR (finetune): Invalid method parameter. '
-                         'Available options: {}'.format(FINETUNING_METHODS))
+        raise ValueError(
+            f'ERROR (finetune): Invalid method parameter. Available options: {FINETUNING_METHODS}'
+        )
     if metric not in FINETUNING_METRICS:
-        raise ValueError('ERROR (finetune): Invalid metric parameter. '
-                         'Available options: {}'.format(FINETUNING_METRICS))
+        raise ValueError(
+            f'ERROR (finetune): Invalid metric parameter. Available options: {FINETUNING_METRICS}'
+        )
 
     train_gen = get_data_loader(texts[0], labels[0], batch_size,
                                 extended_batch_sampler=True, epoch_size=epoch_size)
@@ -236,8 +238,7 @@ def finetune(model, texts, labels, nb_classes, batch_size, method,
     test_gen = get_data_loader(texts[2], labels[2], batch_size,
                               extended_batch_sampler=False)
 
-    checkpoint_path = '{}/torchmoji-checkpoint-{}.bin' \
-                      .format(WEIGHTS_DIR, str(uuid.uuid4()))
+    checkpoint_path = f'{WEIGHTS_DIR}/torchmoji-checkpoint-{str(uuid.uuid4())}.bin'
 
     if method in ['last', 'new']:
         lr = 0.001
@@ -270,9 +271,9 @@ def finetune(model, texts, labels, nb_classes, batch_size, method,
 
     # Training
     if verbose:
-        print('Method:  {}'.format(method))
-        print('Metric:  {}'.format(metric))
-        print('Classes: {}'.format(nb_classes))
+        print(f'Method:  {method}')
+        print(f'Metric:  {metric}')
+        print(f'Classes: {nb_classes}')
 
     if method == 'chain-thaw':
         result = chain_thaw(model, train_gen, val_gen, test_gen, nb_epochs, checkpoint_path, loss_op, embed_l2=embed_l2,
@@ -307,7 +308,9 @@ def tune_trainable(model, loss_op, optim_op, train_gen, val_gen, test_gen,
         Accuracy of the trained model, ONLY if 'evaluate' is set.
     """
     if verbose:
-        print("Trainable weights: {}".format([n for n, p in model.named_parameters() if p.requires_grad]))
+        print(
+            f"Trainable weights: {[n for n, p in model.named_parameters() if p.requires_grad]}"
+        )
         print("Training...")
         if evaluate == 'acc':
             print("Evaluation on test set prior training:", evaluate_using_acc(model, test_gen))
@@ -321,7 +324,7 @@ def tune_trainable(model, loss_op, optim_op, train_gen, val_gen, test_gen,
     sleep(1)
     model.load_state_dict(torch.load(checkpoint_path))
     if verbose >= 2:
-        print("Loaded weights from {}".format(checkpoint_path))
+        print(f"Loaded weights from {checkpoint_path}")
 
     if evaluate == 'acc':
         return evaluate_using_acc(model, test_gen)
@@ -470,7 +473,7 @@ def train_by_chain_thaw(model, train_gen, val_gen, loss_op, patience, nb_epochs,
             if layer is None:
                 print('Finetuning all layers')
             else:
-                print('Finetuning {}'.format(layer))
+                print(f'Finetuning {layer}')
 
         special_params = [id(p) for p in model.embed.parameters()]
         base_params = [p for p in model.parameters() if id(p) not in special_params and p.requires_grad]
@@ -488,7 +491,7 @@ def train_by_chain_thaw(model, train_gen, val_gen, loss_op, patience, nb_epochs,
         sleep(1)
         model.load_state_dict(torch.load(checkpoint_path))
         if verbose >= 2:
-            print("Loaded weights from {}".format(checkpoint_path))
+            print(f"Loaded weights from {checkpoint_path}")
 
 
 def calc_loss(loss_op, pred, yv):

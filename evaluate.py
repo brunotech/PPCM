@@ -11,8 +11,7 @@ import numpy as np
 import jsonlines
 
 def make_header(args,id_starter,knowledge):
-    str_title = ""
-    str_title += "===================================================\n"
+    str_title = "" + "===================================================\n"
     str_title += f"Model={args.model_size} Window={args.window_length} Iteration={args.num_iterations} Step_size={args.stepsize}\n"
     str_title += "===================================================\n"
     name_experiment = f"Iter={args.num_iterations}_Step={args.stepsize}_Start={id_starter}_W={args.window_length}"
@@ -78,17 +77,14 @@ def evaluate(args,model,enc,classifier,entailment,task_ent,class2idx,param_grid,
         name = get_name(args,base_path,class2idx)
         mode = 'w'
         if os.path.exists(name):
-            num_lines = sum(1 for line in open(name,'r'))
+            num_lines = sum(1 for _ in open(name,'r'))
             list_starters = list_starters[num_lines:]
             mode = 'a'
         with jsonlines.open(get_name(args,base_path,class2idx), mode=mode) as writer:
             for id_starter, starter in enumerate(list_starters):
-                conversation = []
-                for t in starter["conversation"]:
-                    conversation.append({"speaker":"human", "text":t})
-                
+                conversation = [{"speaker":"human", "text":t} for t in starter["conversation"]]
                 history = starter["conversation"]
-                context_tokens = sum([enc.encode(h) + [EOS_ID] for h in history],[]) 
+                context_tokens = sum((enc.encode(h) + [EOS_ID] for h in history), []) 
 
                 if(args.wd):
                     context_tokens = [context_tokens]
@@ -102,8 +98,19 @@ def evaluate(args,model,enc,classifier,entailment,task_ent,class2idx,param_grid,
                                                                                     args=args, context=context_tokens,
                                                                                     device=device,repetition_penalty=args.repetition_penalty,
                                                                                     classifier=classifier.classifier_head,knowledge=starter["knowledge"])
-                conversation.append({"speaker":"DGPT","text":original_sentence.tolist()})
-                conversation.append({"speaker":"PPLM","text":perturb_sentence.tolist(),"loss":loss})
+                conversation.extend(
+                    (
+                        {
+                            "speaker": "DGPT",
+                            "text": original_sentence.tolist(),
+                        },
+                        {
+                            "speaker": "PPLM",
+                            "text": perturb_sentence.tolist(),
+                            "loss": loss,
+                        },
+                    )
+                )
                 acc_pplm, acc_original, hypotesis, hypotesis_original = logger_conv_ent(args,conversation,enc,id_starter,logger,class2idx=class2idx,classifier=classifier,knowledge=starter["knowledge"],gold=starter["gold"])
                 global_acc_PPLM.append(acc_pplm)
                 global_acc_original.append(acc_original)

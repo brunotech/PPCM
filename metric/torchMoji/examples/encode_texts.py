@@ -2,6 +2,7 @@
 
 """ Use torchMoji to encode texts into emotional feature vectors.
 """
+
 from __future__ import print_function, division, unicode_literals
 import json
 
@@ -20,20 +21,20 @@ TEST_SENTENCES = ['I love mom\'s cooking',
 maxlen = 30
 batch_size = 32
 
-print('Tokenizing using dictionary from {}'.format(VOCAB_PATH))
+print(f'Tokenizing using dictionary from {VOCAB_PATH}')
 with open(VOCAB_PATH, 'r') as f:
     vocabulary = json.load(f)
 st = SentenceTokenizer(vocabulary, maxlen)
 tokenized, _, _ = st.tokenize_sentences(TEST_SENTENCES)
 
-print('Loading model from {}.'.format(PRETRAINED_PATH))
+print(f'Loading model from {PRETRAINED_PATH}.')
 model = torchmoji_feature_encoding(PRETRAINED_PATH)
 print(model)
 
 print('Encoding texts..')
 encoding = model(tokenized)
 
-print('First 5 dimensions for sentence: {}'.format(TEST_SENTENCES[0]))
+print(f'First 5 dimensions for sentence: {TEST_SENTENCES[0]}')
 print(encoding[0,:5])
 
 # Now you could visualize the encodings to see differences,

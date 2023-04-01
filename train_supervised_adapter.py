@@ -58,8 +58,7 @@ class DatasetTrain(Dataset):
 
     def __getitem__(self, index):
         """Returns one data pair (source and target)."""
-        item = self.data[index]
-        return item
+        return self.data[index]
     def __len__(self):
         return self.dataset_len
 
@@ -78,8 +77,7 @@ def collate_fn(data):
 def build_input_from_segments(args, history, reply, tokenizer):
     """ Build a sequence of input from 3 segments: persona, history and last reply. """
     sequence = [tokenizer.encode(h) + [EOS_ID] for h in history] + [tokenizer.encode(reply)]
-    instance = {}
-    instance["input_ids"] = list(chain(*sequence))
+    instance = {"input_ids": list(chain(*sequence))}
     instance["lm_labels"] = ([-100] * sum(len(s) for s in sequence[:-1])) + sequence[-1]
     return instance
 
@@ -93,34 +91,31 @@ def make_data_loader(args,tokenizer):
     "Sports": "results/evaluate/AG_NEWS_class_Sports/AG_NEWS_class_Sports_iter_75_step_0.02_sample_10_wd_False_bce_False_1.jsonl",
     "World": "results/evaluate/AG_NEWS_class_World/AG_NEWS_class_World_iter_75_step_0.02_sample_10_wd_False_bce_False_1.jsonl"
     }
-    
+
     f = mapper[args.label]
     response = []
     with jsonlines.open(f) as reader: 
-        for i, obj in enumerate(reader):
+        for obj in reader:
             text = " ".join(tokenize.sent_tokenize(obj["hyp"]["PPLM"][0][-1])[:2])
             score = get_ppl(text)
-            if score>700:
-                continue
-            response.append(obj['conversation']['conversation']+[text])
-            
+            if score <= 700:
+                response.append(obj['conversation']['conversation']+[text])
+
     dataset = []
     for r in response:
         seq = build_input_from_segments(args, r[:-1], r[-1], tokenizer)
         dataset.append(seq)
     train_dataset = DatasetTrain(dataset)
-    train_loader = DataLoader(train_dataset, batch_size=args.train_batch_size, shuffle=True,collate_fn=collate_fn)
-
-    return train_loader
+    return DataLoader(
+        train_dataset,
+        batch_size=args.train_batch_size,
+        shuffle=True,
+        collate_fn=collate_fn,
+    )
 
 def make_logdir(args):
     """Create unique path to save results and checkpoints, e.g. runs/Sep22_19-45-59_gpu-7_gpt2"""
-    # Code copied from ignite repo
-    #current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    # logdir = os.path.join('runs', current_time + '_' + socket.gethostname() + '_' + model_name)
-    logdir = os.path.join('runs', f'{args.label}_{args.kl_weight}') #  current_time + '_' + socket.gethostname() + '_' + model_name)
-    
-    return logdir
+    return os.path.join('runs', f'{args.label}_{args.kl_weight}')
 
 
 if __name__ == "__main__":

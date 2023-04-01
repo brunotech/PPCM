@@ -33,15 +33,14 @@ def get_score(responses, lable, starter, classifer):
 
     vater_score = get_vater_score(responses,"very positive")
     emoji, _ = get_emoji_score(responses, "terrified")
-    if("very" in lable):
+    if ("very" in lable):
         score = get_sentiment_score(responses,lable) ## negative
         vater_score = get_vater_score(responses,lable)
 
+    elif ("AG NEWS" in classifer):
+        score = get_text_score_AGNEWS(responses,lable)
     else:
-        if("AG NEWS" in classifer):
-            score = get_text_score_AGNEWS(responses,lable)
-        else:
-            score = 0
+        score = 0
 
     d1,d2,d3 = eval_distinct(responses)
     dist = f"{str(d1)}/{str(d2)}/{str(d3)}"
@@ -50,26 +49,22 @@ def get_score(responses, lable, starter, classifer):
     return ppl, dist, score, vater_score, emoji
     
 def get_response(conversation):
-    temp = []
-    for turn in conversation:
-        temp.append(turn['text'])
-    return temp
+    return [turn['text'] for turn in conversation]
 
 def make_table(table,lable,clm_to_remove,text_class=False):
     print(f"Class {lable}")
     temp = [item for item in table if lable == item["lable"]]
-    if(text_class):
-        temp = [s for s in sorted(temp,key=lambda x: x['Model'])]
+    if text_class:
+        temp = list(sorted(temp,key=lambda x: x['Model']))
         scores = [copy.deepcopy(item['Score']) for item in temp]
         for d in temp:
             del d['Score']
         for i_, s in enumerate(scores):
             temp[i_].update(s)
+    elif ("Score" in clm_to_remove):
+        temp = list(sorted(temp,key=lambda x: (x['Model'])))
     else:
-        if("Score" in clm_to_remove):
-            temp = [s for s in sorted(temp,key=lambda x: (x['Model']))]
-        else:
-            temp = [s for s in sorted(temp,key=lambda x: (x['Model'],x['Score']))]
+        temp = list(sorted(temp,key=lambda x: (x['Model'],x['Score'])))
     for l in clm_to_remove:
         for d in temp:
             del d[l]
@@ -114,12 +109,39 @@ def merge_table(table,lable,clm_to_remove,starter):
     starter = starter * len(lable)
     temp = [item for item in table if item["lable"] in lable]
     table = []
-    # table.append(make_row("DGPT",[item for item in temp if "DGPT" == item["model"]],starter))
-    table.append(make_row("HUMAN",[item for item in temp if "HUMAN" == item["model"] and item["lable"] in lable],starter))
-    table.append(make_row("DGPT",[item for item in temp if "DGPT" == item["model"]],starter))
-    table.append(make_row("DGPT+WD",[item for item in temp if "DGPT+WD" == item["model"]],starter))
-    table.append(make_row("PPLM",[item for item in temp if "PPLM" == item["model"]],starter))
-    table.append(make_row("ADAPTER",[item for item in temp if "ADAPTER" == item["model"]],starter))
+    table.extend(
+        (
+            make_row(
+                "HUMAN",
+                [
+                    item
+                    for item in temp
+                    if item["model"] == "HUMAN" and item["lable"] in lable
+                ],
+                starter,
+            ),
+            make_row(
+                "DGPT",
+                [item for item in temp if item["model"] == "DGPT"],
+                starter,
+            ),
+            make_row(
+                "DGPT+WD",
+                [item for item in temp if item["model"] == "DGPT+WD"],
+                starter,
+            ),
+            make_row(
+                "PPLM",
+                [item for item in temp if item["model"] == "PPLM"],
+                starter,
+            ),
+            make_row(
+                "ADAPTER",
+                [item for item in temp if item["model"] == "ADAPTER"],
+                starter,
+            ),
+        )
+    )
     print(tabulate(table,headers="keys",tablefmt='latex',floatfmt=".2f"))
     print()
 
@@ -145,15 +167,15 @@ def get_human_responses():
                         _, text_turn = d.split("Human 2: ")
                         conversation.append({"turn":i,"speaker":"Human 2","text":text_turn.strip('\n').strip()})
                     i += 1
-    
+
     conversation = data
     list_starters = []
-    for i_c,conv in enumerate(conversation):
+    for conv in conversation:
         for index in range(len(conv)-2):
             history = [conv[index]["text"],conv[index+1]["text"]]
-            context_tokens = len(sum([tokenizer.encode(h) + [1111] for h in history],[]))
-            if(context_tokens <= 70):
-                if(index+2 <=len(conv)):
+            context_tokens = len(sum((tokenizer.encode(h) + [1111] for h in history), []))
+            if (context_tokens <= 70):
+                if (index+2 <=len(conv)):
                     list_starters.append({"conversation":[conv[index]["text"],conv[index+1]["text"]],"response":conv[index+2]["text"]})
                 else:
                     list_starters.append({"conversation":[conv[index]["text"],conv[index+1]["text"]],"response":""})
@@ -201,11 +223,11 @@ def score():
     for (cleaner,f) in files:
         classifer,lable,itr,stp,sample, wd,bce = parse_name(f,cleaner)
         print(itr,lable, stp,sample, wd,bce)
+        starter = []
         if wd:
             acc_DGPT_RE_WD = []
             resp_DGPT_RE_WD = []
             resp_human = []
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     acc_DGPT_RE_WD.append(obj["acc"]["PPLM"])
@@ -224,11 +246,10 @@ def score():
                         ,"Step":None,"Discrim.":0.0,
                         "Ppl.":ppl_HUMAN,"Dist.":dist_HUMAN,"resp":resp_human,
                         "Score":score_HUMAN*100,"vater":100*vater_score_HUMAN,"emoji":emoji_HUMAN})
-                
-        elif(not wd and int(itr) in [0]):
+
+        elif int(itr) in {0}:
             acc_ADAPTER = []
             resp_ADAPTER = []
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     acc_ADAPTER.append(obj["acc"]["DGPT"])
@@ -240,11 +261,9 @@ def score():
                         ,"Step":None,"Discrim.":np.mean(acc_ADAPTER)*100,
                         "Ppl.":ppl,"Dist.":dist,"resp":resp_ADAPTER,
                         "Score":score*100,"vater":100*vater_score,"emoji":emoji})
-        # if(not wd and int(itr)==75 and int(sample)==10 and float(stp)==0.02 and not bce):
-        elif(not wd):
+        else:
             # print(itr,lable, stp,sample, wd,bce)
             acc_PPLM, acc_DGPT, acc_PPLM_WD, acc_DGPT_WD, resp_PPLM, resp_DGPT, resp_PPLM_WD, resp_DGPT_WD = [],[],[],[],[],[],[],[]
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     ## DGPT 
@@ -276,7 +295,7 @@ def score():
                                 "Score":score_WD*100,"vater":100*vater_score_WD,"emoji":emoji_WD})
                 # ppl_pplm, dist_pplm, score_pplm, vater_score_pplm,emoji_pplm = get_score(resp_PPLM, lable, starter, classifer)
                 ppl_pplm_WD, dist_pplm_WD, score_pplm_WD, vater_score_pplm_WD,emoji_pplm_WD = get_score(resp_PPLM_WD, lable, starter, classifer)
-                
+
                 # row.append({"Model":"PPLM","lable":lable,"sample":1,"iter":itr,
                 #             "Step":stp,"Discrim.":np.mean(acc_PPLM),
                 #             "Ppl.":ppl_pplm,"Dist.":dist_pplm,"resp":resp_PPLM,

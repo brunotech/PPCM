@@ -7,9 +7,9 @@ curr_folder = os.path.basename(os.path.normpath(os.getcwd()))
 
 weights_filename = 'pytorch_model.bin'
 weights_folder = 'model'
-weights_path = '{}/{}'.format(weights_folder, weights_filename)
+weights_path = f'{weights_folder}/{weights_filename}'
 if curr_folder == 'scripts':
-    weights_path = '../' + weights_path
+    weights_path = f'../{weights_path}'
 weights_download_link = 'https://www.dropbox.com/s/q8lax9ary32c7t9/pytorch_model.bin?dl=0#'
 
 
@@ -32,15 +32,19 @@ def prompt():
 
 download = True
 if os.path.exists(weights_path):
-    print('Weight file already exists at {}. Would you like to redownload it anyway? [y/n]'.format(weights_path))
+    print(
+        f'Weight file already exists at {weights_path}. Would you like to redownload it anyway? [y/n]'
+    )
     download = prompt()
     already_exists = True
 else:
     already_exists = False
 
 if download:
-    print('About to download the pretrained weights file from {}'.format(weights_download_link))
-    if already_exists == False:
+    print(
+        f'About to download the pretrained weights file from {weights_download_link}'
+    )
+    if not already_exists:
         print('The size of the file is roughly 85MB. Continue? [y/n]')
     else:
         os.unlink(weights_path)
@@ -53,13 +57,14 @@ if download:
         #    f.write(requests.get(weights_download_link).content)
 
         # downloading using wget due to issues with urlretrieve and requests
-        sys_call = 'wget {} -O {}'.format(weights_download_link, os.path.abspath(weights_path))
-        print("Running system call: {}".format(sys_call))
+        sys_call = f'wget {weights_download_link} -O {os.path.abspath(weights_path)}'
+        print(f"Running system call: {sys_call}")
         call(sys_call, shell=True)
 
         if os.path.getsize(weights_path) / MB_FACTOR < 80:
-            raise ValueError("Download finished, but the resulting file is too small! " +
-                             "It\'s only {} bytes.".format(os.path.getsize(weights_path)))
-        print('Downloaded weights to {}'.format(weights_path))
+            raise ValueError(
+                f"Download finished, but the resulting file is too small! It\'s only {os.path.getsize(weights_path)} bytes."
+            )
+        print(f'Downloaded weights to {weights_path}')
 else:
     print('Exiting.')

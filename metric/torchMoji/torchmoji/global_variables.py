@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Global variables.
 """
+
 import tempfile
 from os.path import abspath, dirname
 
@@ -8,17 +9,18 @@ from os.path import abspath, dirname
 # blank tokens can be used for new purposes
 # Tokenizer should be updated if special token prefix is changed
 SPECIAL_PREFIX = 'CUSTOM_'
-SPECIAL_TOKENS = ['CUSTOM_MASK',
-                  'CUSTOM_UNKNOWN',
-                  'CUSTOM_AT',
-                  'CUSTOM_URL',
-                  'CUSTOM_NUMBER',
-                  'CUSTOM_BREAK']
-SPECIAL_TOKENS.extend(['{}BLANK_{}'.format(SPECIAL_PREFIX, i) for i in range(6, 10)])
-
+SPECIAL_TOKENS = [
+    'CUSTOM_MASK',
+    'CUSTOM_UNKNOWN',
+    'CUSTOM_AT',
+    'CUSTOM_URL',
+    'CUSTOM_NUMBER',
+    'CUSTOM_BREAK',
+    *[f'{SPECIAL_PREFIX}BLANK_{i}' for i in range(6, 10)],
+]
 ROOT_PATH = dirname(dirname(abspath(__file__)))
-VOCAB_PATH = '{}/model/vocabulary.json'.format(ROOT_PATH)
-PRETRAINED_PATH = '{}/model/pytorch_model.bin'.format(ROOT_PATH)
+VOCAB_PATH = f'{ROOT_PATH}/model/vocabulary.json'
+PRETRAINED_PATH = f'{ROOT_PATH}/model/pytorch_model.bin'
 
 WEIGHTS_DIR = tempfile.mkdtemp()
 

@@ -50,8 +50,9 @@ def count_ngram(hyps_resp, n):
         return
 
     if type(hyps_resp[0]) != list:
-        print("ERROR, eval_distinct takes in a list of <class 'list'>, get a list of {} instead".format(
-            type(hyps_resp[0])))
+        print(
+            f"ERROR, eval_distinct takes in a list of <class 'list'>, get a list of {type(hyps_resp[0])} instead"
+        )
         return
 
     ngram = set()
@@ -72,17 +73,18 @@ def eval_distinct(hyps_resp):
 
     hyps_resp = [list(map(str, tokenizer.encode(h))) for h in hyps_resp]
 
-    if len(hyps_resp) == 0:
+    if not hyps_resp:
         print("ERROR, eval_distinct get empty input")
         return
 
     if type(hyps_resp[0]) != list:
-        print("ERROR, eval_distinct takes in a list of <class 'list'>, get a list of {} instead".format(
-            type(hyps_resp[0])))
+        print(
+            f"ERROR, eval_distinct takes in a list of <class 'list'>, get a list of {type(hyps_resp[0])} instead"
+        )
         return
 
     hyps_resp = [(' '.join(i)).split() for i in hyps_resp]
-    num_tokens = sum([len(i) for i in hyps_resp])
+    num_tokens = sum(len(i) for i in hyps_resp)
     dist1 = count_ngram(hyps_resp, 1) / float(num_tokens)
     dist2 = count_ngram(hyps_resp, 2) / float(num_tokens)
     dist3 = count_ngram(hyps_resp, 3) / float(num_tokens)

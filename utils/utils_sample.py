@@ -19,8 +19,7 @@ def _prec_recall_f1_score(pred_items, gold_items):
         return 0
     precision = 1.0 * num_same / len(pred_items)
     recall = 1.0 * num_same / len(gold_items)
-    f1 = (2 * precision * recall) / (precision + recall)
-    return f1
+    return (2 * precision * recall) / (precision + recall)
 
 def scorer(args,turn,classifier,enc,class2idx,knowledge,plot=False,gold=None):
     hypotesis = []
@@ -29,7 +28,7 @@ def scorer(args,turn,classifier,enc,class2idx,knowledge,plot=False,gold=None):
         loss = np.transpose(np.array(turn['loss']), (2, 0, 1)) # batch * sequence_len * iteration
     for i,t in enumerate(turn['text']):
         ind_eos = len(cut_seq_to_eos(t))-1
-        
+
         text = enc.decode(cut_seq_to_eos(t))
         dist = dist_score(text,enc)
         bleu = None
@@ -42,8 +41,8 @@ def scorer(args,turn,classifier,enc,class2idx,knowledge,plot=False,gold=None):
         if(plot): plots_array.append(loss[i][:ind_eos,-1])
 
     x = [h[2] for h in hypotesis]
-    if(knowledge):
-        sent_p = [knowledge for i in range(args.num_samples)]
+    if knowledge:
+        sent_p = [knowledge for _ in range(args.num_samples)]
         x = (sent_p,x)
 
     for j, (loss,correct,predition) in enumerate(zip(*predict(args,classifier,x,class2idx))):

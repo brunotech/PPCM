@@ -16,6 +16,7 @@ The class average F1 metric does the following:
 3) Compute the average of all F1 scores.
 """
 
+
 from __future__ import print_function
 import example_helper
 import json
@@ -47,4 +48,4 @@ print(model)
 # For finetuning however, pass in the actual number of classes.
 model, f1 = class_avg_finetune(model, data['texts'], data['labels'],
                                 nb_classes, data['batch_size'], method='last')
-print('F1: {}'.format(f1))
+print(f'F1: {f1}')

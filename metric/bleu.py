@@ -68,7 +68,6 @@ def moses_multi_bleu(hypotheses, references, lowercase=False):
     reference_file.flush()
 
 
-     # Calculate BLEU using multi-bleu script
     with open(hypothesis_file.name, "r") as read_pred:
         bleu_cmd = [multi_bleu_path]
         if lowercase:
@@ -77,7 +76,7 @@ def moses_multi_bleu(hypotheses, references, lowercase=False):
         try:
             bleu_out = subprocess.check_output(bleu_cmd, stdin=read_pred, stderr=subprocess.STDOUT)
             bleu_out = bleu_out.decode("utf-8")
-            bleu_score = re.search(r"BLEU = (.+?),", bleu_out).group(1)
+            bleu_score = re.search(r"BLEU = (.+?),", bleu_out)[1]
             bleu_score = float(bleu_score)
         except subprocess.CalledProcessError as error:
             if error.output is not None:

@@ -17,20 +17,18 @@ def top_k_logits(logits, k, probs=False):
     """
     if k == 0:
         return logits
-    else:
-        values = torch.topk(logits, k)[0]
-        batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
-        if probs:
-            return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
-        return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
+    values = torch.topk(logits, k)[0]
+    batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
+    if probs:
+        return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
+    return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
 
 def sample(model, args, context=None, past=None, device='cuda',
                        sample=True, repetition_penalty=1.0):
     output = torch.tensor(context, device=device, dtype=torch.long) if context else None
     output_response = output.new_zeros([output.size(0),0])
     stopped = [0 for _ in range(output.size(0))]
-    for i in range(args.length):
-
+    for _ in range(args.length):
         if past is None and output is not None:
             prev = output[:, -1:]
             _, past = model(output[:, :-1])
@@ -65,13 +63,10 @@ def sample(model, args, context=None, past=None, device='cuda',
     return output_response
 
 def get_rankers(args,model):
-    classifiers = {}
-
     args.discrim = 'sentiment'
     args.label_class = 2
     classifier, class2idx = load_classifier(args, model)
-    classifiers['a'] = [classifier, class2idx]
-
+    classifiers = {'a': [classifier, class2idx]}
     args.discrim = 'sentiment'
     args.label_class = 3
     classifier, class2idx = load_classifier(args, model)
@@ -86,7 +81,7 @@ def get_rankers(args,model):
     args.label_class = 1
     classifier, class2idx = load_classifier(args, model)
     classifiers['d'] = [classifier, class2idx]
-    
+
     args.discrim = 'AG_NEWS'
     args.label_class = 0
     classifier, class2idx = load_classifier(args, model)
@@ -169,7 +164,7 @@ def interact(args,model,enc,classifier,class2idx,device):
 
         history.append(raw_text)
 
-        context_tokens = sum([enc.encode(h) + [EOS_ID] for h in history],[]) 
+        context_tokens = sum((enc.encode(h) + [EOS_ID] for h in history), [])
         context_tokens = [context_tokens for _ in range(args.num_samples)]
 
         original_sentence = sample(model=model,args=args, context=context_tokens, device=device,

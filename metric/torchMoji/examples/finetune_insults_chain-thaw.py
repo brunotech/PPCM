@@ -15,6 +15,7 @@ The 'chain-thaw' method does the following:
 4) Unfreeze all layers and train entire model.
 """
 
+
 from __future__ import print_function
 import example_helper
 import json
@@ -41,4 +42,4 @@ model = torchmoji_transfer(nb_classes, PRETRAINED_PATH, extend_embedding=data['a
 print(model)
 model, acc = finetune(model, data['texts'], data['labels'], nb_classes,
                       data['batch_size'], method='chain-thaw')
-print('Acc: {}'.format(acc))
+print(f'Acc: {acc}')

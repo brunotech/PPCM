@@ -93,8 +93,7 @@ def binary_accuracy(preds, y):
     #round predictions to the closest integer
     rounded_preds = torch.round(torch.sigmoid(preds))
     correct = (rounded_preds == y).float() #convert into float for division 
-    acc = correct.sum() / len(correct)
-    return acc
+    return correct.sum() / len(correct)
 
 def accuracy(preds, y):
     """
@@ -126,6 +125,7 @@ def train_scorer(
         tokens = tokenizer.tokenize(sentence) 
         tokens = tokens[:max_input_length-2]
         return tokens
+
     TEXT = torchtext_data.Field(batch_first = True,
             use_vocab = False,
             tokenize = tokenize_and_cut,
@@ -200,7 +200,7 @@ def train_scorer(
                                                         device = device)
         idx2class = ["neg","pos"]
         output_dim = len(idx2class)
-        
+
     elif dataset == "AmazonReviewFull":
         idx2class = ["1","2","3","4","5"]
         class2idx = {c: i for i, c in enumerate(idx2class)}
@@ -230,7 +230,7 @@ def train_scorer(
                                                         device = device,
                                                         sort_key=lambda x: len(x.text))
         output_dim = len(idx2class)
-    
+
     elif dataset == "daily_dialogue_emotion":
         LABEL = torchtext_data.LabelField(dtype = torch.long)
         train_val_fields = [
@@ -280,7 +280,7 @@ def train_scorer(
                                                         batch_size = BATCH_SIZE, 
                                                         device = device,
                                                         sort_key=lambda x: len(x.text))
-        
+
         # 0 - hate speech
         # 1 - offensive  language
         # 2 - neither
@@ -311,7 +311,7 @@ def train_scorer(
                                                         batch_size = BATCH_SIZE, 
                                                         device = device,
                                                         sort_key=lambda x: len(x.text))
-        
+
         # 0 - non attack
         # 1 - attack
         idx2class = ["non_attack","attack"]
@@ -339,18 +339,22 @@ def train_scorer(
     for epoch in range(epochs):
         
         start_time = time.time()
-        
-        train_loss, train_acc, train_F1 = train(model, train_iterator, optimizer, criterion,True if output_dim==2 else False)
-        valid_loss, valid_acc, valid_F1 = evaluate(model, test_iterator, criterion,True if output_dim==2 else False)
-            
+
+        train_loss, train_acc, train_F1 = train(
+            model, train_iterator, optimizer, criterion, output_dim == 2
+        )
+        valid_loss, valid_acc, valid_F1 = evaluate(
+            model, test_iterator, criterion, output_dim == 2
+        )
+
         end_time = time.time()
-            
+
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-            
+
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), f'models/scorers/{args.dataset}.pt')
-        
+
         print(f'Epoch: {epoch+1:02} | Epoch Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}% |Train F1: {train_F1*100:.2f}% ')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}% | Val. F1: {valid_F1*100:.2f}% ')

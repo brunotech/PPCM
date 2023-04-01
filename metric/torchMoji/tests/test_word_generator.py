@@ -22,8 +22,6 @@ def test_only_unicode_accepted():
         ]
 
     wg = WordGenerator(sentences)
-    for w in wg:
-        pass
 
 
 def test_unicode_sentences_ignored_if_set():
@@ -53,7 +51,7 @@ def test_convert_unicode_word():
     wg = WordGenerator([], allow_unicode_text=True)
 
     result = wg.convert_unicode_word(u'č')
-    assert result == (True, u'\u010d'), '{}'.format(result)
+    assert result == (True, u'\u010d'), f'{result}'
 
 
 def test_convert_unicode_word_ignores_if_set():
@@ -62,7 +60,7 @@ def test_convert_unicode_word_ignores_if_set():
     wg = WordGenerator([], allow_unicode_text=False)
 
     result = wg.convert_unicode_word(u'č')
-    assert result == (False, ''), '{}'.format(result)
+    assert result == (False, ''), f'{result}'
 
 
 def test_convert_unicode_chars():
@@ -70,4 +68,7 @@ def test_convert_unicode_chars():
     """
     wg = WordGenerator([], allow_unicode_text=True)
     result = wg.convert_unicode_word(u'ěščřžýáíé')
-    assert result == (True, u'\u011b\u0161\u010d\u0159\u017e\xfd\xe1\xed\xe9'), '{}'.format(result)
+    assert result == (
+        True,
+        u'\u011b\u0161\u010d\u0159\u017e\xfd\xe1\xed\xe9',
+    ), f'{result}'

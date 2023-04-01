@@ -74,19 +74,17 @@ def class_avg_finetune(model, texts, labels, nb_classes, batch_size,
     """
 
     if method not in FINETUNING_METHODS:
-        raise ValueError('ERROR (class_avg_tune_trainable): '
-                         'Invalid method parameter. '
-                         'Available options: {}'.format(FINETUNING_METHODS))
+        raise ValueError(
+            f'ERROR (class_avg_tune_trainable): Invalid method parameter. Available options: {FINETUNING_METHODS}'
+        )
 
     (X_train, y_train) = (texts[0], labels[0])
     (X_val, y_val) = (texts[1], labels[1])
     (X_test, y_test) = (texts[2], labels[2])
 
-    checkpoint_path = '{}/torchmoji-checkpoint-{}.bin' \
-                      .format(WEIGHTS_DIR, str(uuid.uuid4()))
+    checkpoint_path = f'{WEIGHTS_DIR}/torchmoji-checkpoint-{str(uuid.uuid4())}.bin'
 
-    f1_init_path = '{}/torchmoji-f1-init-{}.bin' \
-                   .format(WEIGHTS_DIR, str(uuid.uuid4()))
+    f1_init_path = f'{WEIGHTS_DIR}/torchmoji-f1-init-{str(uuid.uuid4())}.bin'
 
     if method in ['last', 'new']:
         lr = 0.001
@@ -114,8 +112,8 @@ def class_avg_finetune(model, texts, labels, nb_classes, batch_size,
 
     # Training
     if verbose:
-        print('Method:  {}'.format(method))
-        print('Classes: {}'.format(nb_classes))
+        print(f'Method:  {method}')
+        print(f'Classes: {nb_classes}')
 
     if method == 'chain-thaw':
         result = class_avg_chainthaw(model, nb_classes=nb_classes,
@@ -200,7 +198,7 @@ def class_avg_tune_trainable(model, nb_classes, loss_op, optim_op, train, val, t
     torch.save(model.state_dict(), init_weight_path)
     for i in range(nb_iter):
         if verbose:
-            print('Iteration number {}/{}'.format(i+1, nb_iter))
+            print(f'Iteration number {i + 1}/{nb_iter}')
 
         model.load_state_dict(torch.load(init_weight_path))
         y_train_new, y_val_new, y_test_new = prepare_labels(y_train, y_val,
@@ -226,8 +224,8 @@ def class_avg_tune_trainable(model, nb_classes, loss_op, optim_op, train, val, t
         f1_test, best_t = find_f1_threshold(y_val_new, y_pred_val,
                                             y_test_new, y_pred_test)
         if verbose:
-            print('f1_test: {}'.format(f1_test))
-            print('best_t:  {}'.format(best_t))
+            print(f'f1_test: {f1_test}')
+            print(f'best_t:  {best_t}')
         total_f1 += f1_test
 
     return total_f1 / nb_iter
@@ -279,7 +277,7 @@ def class_avg_chainthaw(model, nb_classes, loss_op, train, val, test, batch_size
 
     for i in range(nb_iter):
         if verbose:
-            print('Iteration number {}/{}'.format(i+1, nb_iter))
+            print(f'Iteration number {i + 1}/{nb_iter}')
 
         model.load_state_dict(torch.load(f1_init_weight_path))
         y_train_new, y_val_new, y_test_new = prepare_labels(y_train, y_val,
@@ -308,8 +306,8 @@ def class_avg_chainthaw(model, nb_classes, loss_op, train, val, test, batch_size
                                             y_test_new, y_pred_test)
 
         if verbose:
-            print('f1_test: {}'.format(f1_test))
-            print('best_t:  {}'.format(best_t))
+            print(f'f1_test: {f1_test}')
+            print(f'best_t:  {best_t}')
         total_f1 += f1_test
 
     return total_f1 / nb_iter

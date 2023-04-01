@@ -60,4 +60,4 @@ if __name__ == "__main__":
     # map to emojis
     emojis = map(lambda x: EMOJIS[x], emoji_ids)
 
-    print(emoji.emojize("{} {}".format(args.text,' '.join(emojis)), use_aliases=True))
+    print(emoji.emojize(f"{args.text} {' '.join(emojis)}", use_aliases=True))

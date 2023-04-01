@@ -40,16 +40,11 @@ VARIATION_SELECTORS = [ '\ufe00',
 
 # from https://stackoverflow.com/questions/92438/stripping-non-printable-characters-from-a-string-in-python
 ALL_CHARS = (unichr(i) for i in range(sys.maxunicode))
-CONTROL_CHARS = ''.join(map(unichr, list(range(0,32)) + list(range(127,160))))
-CONTROL_CHAR_REGEX = re.compile('[%s]' % re.escape(CONTROL_CHARS))
+CONTROL_CHARS = ''.join(map(unichr, list(range(32)) + list(range(127,160))))
+CONTROL_CHAR_REGEX = re.compile(f'[{re.escape(CONTROL_CHARS)}]')
 
 def is_special_token(word):
-    equal = False
-    for spec in SPECIAL_TOKENS:
-        if word == spec:
-            equal = True
-            break
-    return equal
+    return any(word == spec for spec in SPECIAL_TOKENS)
 
 def mostly_english(words, english, pct_eng_short=0.5, pct_eng_long=0.6, ignore_special_tokens=True, min_length=2):
     """ Ensure text meets threshold for containing English words """
@@ -96,19 +91,16 @@ def correct_length(words, min_words, max_words, ignore_special_tokens=True):
         if ignore_special_tokens and is_special_token(w):
             continue
         n_words += 1
-    valid = min_words <= n_words and n_words <= max_words
-    return valid
+    return min_words <= n_words <= max_words
 
 def punct_word(word, punctuation=string.punctuation):
-    return all([True if c in punctuation else False for c in word])
+    return all(c in punctuation for c in word)
 
 def load_non_english_user_set():
-    non_english_user_set = set(np.load('uids.npz')['data'])
-    return non_english_user_set
+    return set(np.load('uids.npz')['data'])
 
 def non_english_user(userid, non_english_user_set):
-    neu_found = int(userid) in non_english_user_set
-    return neu_found
+    return int(userid) in non_english_user_set
 
 def separate_emojis_and_text(text):
     emoji_chars = []
@@ -149,7 +141,7 @@ def shorten_word(word):
     # find groups of 3+ consecutive letters
     letter_groups = [list(g) for k, g in groupby(word)]
     triple_or_more = [''.join(g) for g in letter_groups if len(g) >= 3]
-    if len(triple_or_more) == 0:
+    if not triple_or_more:
         return word
 
     # replace letters to find the short word
@@ -190,5 +182,5 @@ def convert_linebreaks(text):
     # ugly hack handling non-breaking space no matter how badly it's been encoded in the input
     # space around to ensure proper tokenization
     for r in ['\\\\n', '\\n', '\n', '\\\\r', '\\r', '\r', '<br>']:
-        text = text.replace(r, ' ' + SPECIAL_TOKENS[5] + ' ')
+        text = text.replace(r, f' {SPECIAL_TOKENS[5]} ')
     return text

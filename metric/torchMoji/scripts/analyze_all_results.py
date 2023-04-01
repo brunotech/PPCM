@@ -13,7 +13,7 @@ DATASETS = ['SE0714', 'Olympic', 'PsychExp', 'SS-Twitter', 'SS-Youtube',
 def get_results(dset):
     METHOD = 'last'
     RESULTS_DIR = 'results/'
-    RESULT_PATHS = glob.glob('{}/{}_{}_*_results.txt'.format(RESULTS_DIR, dset, METHOD))
+    RESULT_PATHS = glob.glob(f'{RESULTS_DIR}/{dset}_{METHOD}_*_results.txt')
     assert len(RESULT_PATHS)
 
     scores = []
@@ -27,14 +27,14 @@ def get_results(dset):
     minimum = min(scores)
     std = np.std(scores)
 
-    print('Dataset: {}'.format(dset))
-    print('Method:  {}'.format(METHOD))
-    print('Number of results: {}'.format(len(scores)))
+    print(f'Dataset: {dset}')
+    print(f'Method:  {METHOD}')
+    print(f'Number of results: {len(scores)}')
     print('--------------------------')
-    print('Average: {}'.format(average))
-    print('Maximum: {}'.format(maximum))
-    print('Minimum: {}'.format(minimum))
-    print('Standard deviaton: {}'.format(std))
+    print(f'Average: {average}')
+    print(f'Maximum: {maximum}')
+    print(f'Minimum: {minimum}')
+    print(f'Standard deviaton: {std}')
 
 for dset in DATASETS:
     get_results(dset)

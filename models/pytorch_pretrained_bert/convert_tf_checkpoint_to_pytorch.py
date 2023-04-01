@@ -30,14 +30,14 @@ from pytorch_pretrained_bert.modeling import BertConfig, BertForPreTraining, loa
 def convert_tf_checkpoint_to_pytorch(tf_checkpoint_path, bert_config_file, pytorch_dump_path):
     # Initialise PyTorch model
     config = BertConfig.from_json_file(bert_config_file)
-    print("Building PyTorch model from configuration: {}".format(str(config)))
+    print(f"Building PyTorch model from configuration: {str(config)}")
     model = BertForPreTraining(config)
 
     # Load weights from tf checkpoint
     load_tf_weights_in_bert(model, tf_checkpoint_path)
 
     # Save pytorch-model
-    print("Save PyTorch model to {}".format(pytorch_dump_path))
+    print(f"Save PyTorch model to {pytorch_dump_path}")
     torch.save(model.state_dict(), pytorch_dump_path)
 
 

@@ -251,10 +251,7 @@ class TorchMoji(nn.Module):
         if return_numpy:
             outputs = outputs.data.numpy()
 
-        if self.return_attention:
-            return outputs, att_weights
-        else:
-            return outputs
+        return (outputs, att_weights) if self.return_attention else outputs
 
 
 def load_specific_weights(model, weight_path, exclude_names=[], extend_embedding=0, verbose=True):
@@ -272,9 +269,9 @@ def load_specific_weights(model, weight_path, exclude_names=[], extend_embedding
         ValueError if the file at weight_path does not exist.
     """
     if not exists(weight_path):
-        raise ValueError('ERROR (load_weights): The weights file at {} does '
-                         'not exist. Refer to the README for instructions.'
-                         .format(weight_path))
+        raise ValueError(
+            f'ERROR (load_weights): The weights file at {weight_path} does not exist. Refer to the README for instructions.'
+        )
 
     if extend_embedding and 'embed' in exclude_names:
         raise ValueError('ERROR (load_weights): Cannot extend a vocabulary '
@@ -286,30 +283,31 @@ def load_specific_weights(model, weight_path, exclude_names=[], extend_embedding
     for key, weight in weights.items():
         if any(excluded in key for excluded in exclude_names):
             if verbose:
-                print('Ignoring weights for {}'.format(key))
+                print(f'Ignoring weights for {key}')
             continue
 
         try:
             model_w = model.state_dict()[key]
         except KeyError:
-            raise KeyError("Weights had parameters {},".format(key)
-                           + " but could not find this parameters in model.")
+            raise KeyError(
+                f"Weights had parameters {key}, but could not find this parameters in model."
+            )
 
         if verbose:
-            print('Loading weights for {}'.format(key))
+            print(f'Loading weights for {key}')
 
         # extend embedding layer to allow new randomly initialized words
         # if requested. Otherwise, just load the weights for the layer.
         if 'embed' in key and extend_embedding > 0:
             weight = torch.cat((weight, model_w[NB_TOKENS:, :]), dim=0)
             if verbose:
-                print('Extended vocabulary for embedding layer ' +
-                      'from {} to {} tokens.'.format(
-                        NB_TOKENS, NB_TOKENS + extend_embedding))
+                print(
+                    f'Extended vocabulary for embedding layer from {NB_TOKENS} to {NB_TOKENS + extend_embedding} tokens.'
+                )
         try:
             model_w.copy_(weight)
         except:
-            print('While copying the weigths named {}, whose dimensions in the model are'
-                  ' {} and whose dimensions in the saved file are {}, ...'.format(
-                        key, model_w.size(), weight.size()))
+            print(
+                f'While copying the weigths named {key}, whose dimensions in the model are {model_w.size()} and whose dimensions in the saved file are {weight.size()}, ...'
+            )
             raise

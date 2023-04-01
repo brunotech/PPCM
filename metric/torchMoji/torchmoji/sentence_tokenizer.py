@@ -29,10 +29,9 @@ class SentenceTokenizer():
         """
 
         if len(vocabulary) > np.iinfo('uint16').max:
-            raise ValueError('Dictionary is too big ({} tokens) for the numpy '
-                             'datatypes used (max limit={}). Reduce vocabulary'
-                             ' or adjust code accordingly!'
-                             .format(len(vocabulary), np.iinfo('uint16').max))
+            raise ValueError(
+                f"Dictionary is too big ({len(vocabulary)} tokens) for the numpy datatypes used (max limit={np.iinfo('uint16').max}). Reduce vocabulary or adjust code accordingly!"
+            )
 
         # Shouldn't be able to modify the given vocabulary
         self.vocabulary = deepcopy(vocabulary)
@@ -101,9 +100,9 @@ class SentenceTokenizer():
         for s_words, s_info in self.wordgen:
             s_tokens = self.find_tokens(s_words)
 
-            if (self.ignore_sentences_with_only_custom and
-                np.all([True if t < len(SPECIAL_TOKENS)
-                        else False for t in s_tokens])):
+            if self.ignore_sentences_with_only_custom and np.all(
+                [t < len(SPECIAL_TOKENS) for t in s_tokens]
+            ):
                 n_ignored_unknowns += 1
                 continue
             if len(s_tokens) > self.fixed_length:
@@ -239,7 +238,7 @@ def coverage(dataset, verbose=False):
     coverage = 1.0 - float(n_unknown) / n_total
 
     if verbose:
-        print("Unknown words: {}".format(n_unknown))
-        print("Total words: {}".format(n_total))
-        print("Coverage: {}".format(coverage))
+        print(f"Unknown words: {n_unknown}")
+        print(f"Total words: {n_total}")
+        print(f"Coverage: {coverage}")
     return coverage

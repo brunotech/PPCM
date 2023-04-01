@@ -38,11 +38,9 @@ def print_example(table,label,starter,human, number=10):
     table = [item for item in table if label == item["label"]]
 
     for i_s, stat in enumerate(starter):
-        temp_table = []
-        for s in stat:
-            temp_table.append({"Model":"HUMAN","Response":s})
+        temp_table = [{"Model":"HUMAN","Response":s} for s in stat]
         temp_table += ["null"]*7
-        for i_t, item in enumerate(table):
+        for item in table:
             temp_table[template[item["model"]]] = {"Model":item["model"],"Response":item["resp"][i_s]}
 
         temp_table[template["HUMAN"]] = {"Model":"HUMAN","Response":human[i_s]["response"]}
@@ -61,13 +59,13 @@ def save_example_csv(table, label, starter, human, number=10):
         for i_t, s in enumerate(stat):
             temp_table[i_t] = s
         temp_table[csv_columns.index('HUMAN3')] = human[i_s]["response"]
-        for i_t, item in enumerate(table):
+        for item in table:
             temp_table[csv_columns.index(item['model'])] = item["resp"][i_s]
 
         gen_table.append(temp_table)
         if (i_s == number): break
 
-    save_file = 'results/evaluate/sample_' + label + '.csv'
+    save_file = f'results/evaluate/sample_{label}.csv'
     with open(save_file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(csv_columns)
@@ -95,15 +93,15 @@ def get_human_responses():
                         _, text_turn = d.split("Human 2: ")
                         conversation.append({"turn":i,"speaker":"Human 2","text":text_turn.strip('\n').strip()})
                     i += 1
-    
+
     conversation = data
     list_starters = []
-    for i_c,conv in enumerate(conversation):
+    for conv in conversation:
         for index in range(len(conv)-2):
             history = [conv[index]["text"],conv[index+1]["text"]]
-            context_tokens = len(sum([tokenizer.encode(h) + [1111] for h in history],[]))
-            if(context_tokens <= 70):
-                if(index+2 <=len(conv)):
+            context_tokens = len(sum((tokenizer.encode(h) + [1111] for h in history), []))
+            if (context_tokens <= 70):
+                if (index+2 <=len(conv)):
                     list_starters.append({"conversation":[conv[index]["text"],conv[index+1]["text"]],"response":conv[index+2]["text"]})
                 else:
                     list_starters.append({"conversation":[conv[index]["text"],conv[index+1]["text"]],"response":"DUMMY"})
@@ -131,7 +129,7 @@ def score(save=False):
             ("results/evaluate/daily_dialogue_act_class_question/","results/evaluate/daily_dialogue_act_class_question/daily_dialogue_act_class_question_iter_75_step_0.02_sample_10_wd_False_bce_False_1.jsonl"),
             ("results/evaluate/daily_dialogue_act_class_question/","results/evaluate/daily_dialogue_act_class_question/daily_dialogue_act_class_question_iter_10_step_0.02_sample_10_wd_True_bce_False.jsonl"),
             ("results/evaluate/daily_dialogue_act_class_question/","results/evaluate/daily_dialogue_act_class_question/daily_dialogue_act_class_question_iter_0_step_0.02_sample_10_wd_False_bce_False_111.jsonl"),
-            
+
             # ("results/evaluate/daily_dialogue_act_class_question/","results/evaluate/daily_dialogue_act_class_question/daily_dialogue_act_class_question_iter_0_step_0.02_sample_10_wd_False_bce_False.jsonl"),
 
             ("results/evaluate/toxicity_class_toxic/","results/evaluate/toxicity_class_toxic/toxicity_class_toxic_iter_75_step_0.02_sample_10_wd_False_bce_False.jsonl"),
@@ -162,10 +160,10 @@ def score(save=False):
     for (cleaner,f) in files:
         classifer,label,itr,stp,sample, wd,bce = parse_name(f,cleaner)
         print(itr,label, stp,sample, wd,bce)
+        starter = []
         if wd:
             acc_DGPT_RE_WD = []
             resp_DGPT_RE_WD = []
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     acc_DGPT_RE_WD.append(obj["acc"]["PPLM"])
@@ -176,11 +174,10 @@ def score(save=False):
                         ,"Step":None,"Acc":np.mean(acc_DGPT_RE_WD),
                         "ppl":0,"dist":0,"resp":resp_DGPT_RE_WD,
                         "score":0,"vater":0,"emoji":0})
-                
-        elif(not wd and int(itr) in [0]):
+
+        elif int(itr) in {0}:
             acc_ADAPTER = []
             resp_ADAPTER = []
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     acc_ADAPTER.append(obj["acc"]["DGPT"])
@@ -192,11 +189,9 @@ def score(save=False):
                         ,"Step":None,"Acc":np.mean(acc_ADAPTER),
                         "ppl":0,"dist":0,"resp":resp_ADAPTER,
                         "score":0,"vater":0,"emoji":0})
-        # if(not wd and int(itr)==75 and int(sample)==10 and float(stp)==0.02 and not bce):
-        elif(not wd):
+        else:
             # print(itr,label, stp,sample, wd,bce)
             acc_PPLM, acc_DGPT, acc_PPLM_WD, acc_DGPT_WD, resp_PPLM, resp_DGPT, resp_PPLM_WD, resp_DGPT_WD = [],[],[],[],[],[],[],[]
-            starter = []
             with jsonlines.open(f) as reader: 
                 for i_, obj in enumerate(reader):
                     ## DGPT 
@@ -214,26 +209,72 @@ def score(save=False):
                     resp_PPLM_WD.append(obj["hyp"]["PPLM"][0][-1])
                     starter.append(obj["conversation"]["conversation"])
                     if(i_ == 10):break
-            if(len(resp_DGPT) and len(resp_PPLM) and len(acc_DGPT_WD) and len(acc_PPLM_WD)):
-                if(label not in done):
-                    row.append({"model":"DGPT","label":label,"sample":1,"iter":None
-                                ,"Step":None,"Acc":np.mean(acc_DGPT),
-                                "ppl":0,"dist":0,"resp":resp_DGPT,
-                                "score":0,"vater":0,"emoji":0})
-                    row.append({"model":"DGPT+R","label":label,"sample":sample,"iter":None,
-                                "Step":None,"Acc":np.mean(acc_DGPT_WD),
-                                "ppl":0,"dist":0,"resp":resp_DGPT_WD,
-                                "score":0,"vater":0,"emoji":0})
-                
-                row.append({"model":"PPLM","label":label,"sample":1,"iter":itr,
-                            "Step":stp,"Acc":np.mean(acc_PPLM),
-                            "ppl":0,"dist":0,"resp":resp_PPLM,
-                            "score":0,"vater":0,"emoji":0})
-
-                row.append({"model":"PPLM+R","label":label,"sample":sample,"iter":itr,
-                            "Step":stp,"Acc":np.mean(acc_PPLM_WD),
-                            "ppl":0,"dist":0,"resp":resp_PPLM_WD,
-                            "score":0,"vater":0,"emoji":0})
+            if (len(resp_DGPT) and len(resp_PPLM) and len(acc_DGPT_WD) and len(acc_PPLM_WD)):
+                if (label not in done):
+                    row.extend(
+                        (
+                            {
+                                "model": "DGPT",
+                                "label": label,
+                                "sample": 1,
+                                "iter": None,
+                                "Step": None,
+                                "Acc": np.mean(acc_DGPT),
+                                "ppl": 0,
+                                "dist": 0,
+                                "resp": resp_DGPT,
+                                "score": 0,
+                                "vater": 0,
+                                "emoji": 0,
+                            },
+                            {
+                                "model": "DGPT+R",
+                                "label": label,
+                                "sample": sample,
+                                "iter": None,
+                                "Step": None,
+                                "Acc": np.mean(acc_DGPT_WD),
+                                "ppl": 0,
+                                "dist": 0,
+                                "resp": resp_DGPT_WD,
+                                "score": 0,
+                                "vater": 0,
+                                "emoji": 0,
+                            },
+                        )
+                    )
+                row.extend(
+                    (
+                        {
+                            "model": "PPLM",
+                            "label": label,
+                            "sample": 1,
+                            "iter": itr,
+                            "Step": stp,
+                            "Acc": np.mean(acc_PPLM),
+                            "ppl": 0,
+                            "dist": 0,
+                            "resp": resp_PPLM,
+                            "score": 0,
+                            "vater": 0,
+                            "emoji": 0,
+                        },
+                        {
+                            "model": "PPLM+R",
+                            "label": label,
+                            "sample": sample,
+                            "iter": itr,
+                            "Step": stp,
+                            "Acc": np.mean(acc_PPLM_WD),
+                            "ppl": 0,
+                            "dist": 0,
+                            "resp": resp_PPLM_WD,
+                            "score": 0,
+                            "vater": 0,
+                            "emoji": 0,
+                        },
+                    )
+                )
                 done.add(label)
 
     print("Sentiment")

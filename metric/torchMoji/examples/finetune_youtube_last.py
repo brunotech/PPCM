@@ -10,6 +10,7 @@ The 'last' method does the following:
 2) Train.
 """
 
+
 from __future__ import print_function
 import example_helper
 import json
@@ -19,7 +20,7 @@ from torchmoji.finetuning import (
      load_benchmark,
      finetune)
 
-DATASET_PATH = '{}/data/SS-Youtube/raw.pickle'.format(ROOT_PATH)
+DATASET_PATH = f'{ROOT_PATH}/data/SS-Youtube/raw.pickle'
 nb_classes = 2
 
 with open(VOCAB_PATH, 'r') as f:
@@ -32,4 +33,4 @@ data = load_benchmark(DATASET_PATH, vocab)
 model = torchmoji_transfer(nb_classes, PRETRAINED_PATH)
 print(model)
 model, acc = finetune(model, data['texts'], data['labels'], nb_classes, data['batch_size'], method='last')
-print('Acc: {}'.format(acc))
+print(f'Acc: {acc}')

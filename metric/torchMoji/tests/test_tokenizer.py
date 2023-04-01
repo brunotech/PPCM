@@ -162,6 +162,6 @@ def test_base(tests):
     """
     for (test, expected) in tests:
         actual = tokenize(test)
-        assert actual == expected, \
-            "Tokenization of \'{}\' failed, expected: {}, actual: {}"\
-            .format(test, expected, actual)
+        assert (
+            actual == expected
+        ), f"Tokenization of \'{test}\' failed, expected: {expected}, actual: {actual}"

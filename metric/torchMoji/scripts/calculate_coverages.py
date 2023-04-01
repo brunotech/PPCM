@@ -36,13 +36,9 @@ with open('../model/vocabulary.json', 'r') as f:
 results = []
 for p in DATASET_PATHS:
     coverage_result = [p]
-    print('Calculating coverage for {}'.format(p))
+    print(f'Calculating coverage for {p}')
     with open(p, 'rb') as f:
-        if IS_PYTHON2:
-            s = pickle.load(f)
-        else:
-            s = pickle.load(f, fix_imports=True)
-
+        s = pickle.load(f) if IS_PYTHON2 else pickle.load(f, fix_imports=True)
     # Decode data
     try:
         s['texts'] = [unicode(x) for x in s['texts']]
@@ -85,6 +81,6 @@ with open(OUTPUT_PATH, 'wb') as csvfile:
         try:
             writer.writerow(row)
         except:
-            print("Exception at row {}!".format(i))
+            print(f"Exception at row {i}!")
 
-print('Saved to {}'.format(OUTPUT_PATH))
+print(f'Saved to {OUTPUT_PATH}')

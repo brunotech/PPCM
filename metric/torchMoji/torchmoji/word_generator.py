@@ -113,17 +113,12 @@ class WordGenerator():
             if len(decoded_c) == 0:
                 # Cannot decode to anything reasonable
                 word_converted_punct.append(c)
+            elif allowed_punct := punct_word(
+                decoded_c, punctuation=ALLOWED_CONVERTED_UNICODE_PUNCTUATION
+            ):
+                word_converted_punct.append(decoded_c)
             else:
-                # Check if all punctuation and therefore fine
-                # to include unidecoded version
-                allowed_punct = punct_word(
-                        decoded_c,
-                        punctuation=ALLOWED_CONVERTED_UNICODE_PUNCTUATION)
-
-                if allowed_punct:
-                    word_converted_punct.append(decoded_c)
-                else:
-                    word_converted_punct.append(c)
+                word_converted_punct.append(c)
         return ''.join(word_converted_punct)
 
     def convert_unicode_word(self, word):
@@ -190,8 +185,8 @@ class WordGenerator():
         info = {}
 
         pre_valid, pre_line, pre_info = \
-            self.data_preprocess_filtering(line, self.stats['total'])
-        info.update(pre_info)
+                self.data_preprocess_filtering(line, self.stats['total'])
+        info |= pre_info
         if not pre_valid:
             self.stats['pretokenization_filtered'] += 1
             return False, [], info
@@ -202,17 +197,14 @@ class WordGenerator():
             return False, [], info
 
         post_valid, post_words, post_info = \
-            self.data_postprocess_filtering(words, self.stats['total'])
+                self.data_postprocess_filtering(words, self.stats['total'])
         info.update(post_info)
         if not post_valid:
             self.stats['posttokenization_filtered'] += 1
         return post_valid, post_words, info
 
     def generate_array_from_input(self):
-        sentences = []
-        for words in self:
-            sentences.append(words)
-        return sentences
+        return list(self)
 
     def reset_stats(self):
         self.stats = {'pretokenization_filtered': 0,

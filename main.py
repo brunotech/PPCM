@@ -69,11 +69,16 @@ def run_model():
     config = GPT2Config.from_json_file(os.path.join(args.model_path, 'config.json'))
     tokenizer = GPT2Tokenizer.from_pretrained(args.model_path)
 
-    if(args.load_check_point_adapter != "None"):
+    if (args.load_check_point_adapter != "None"):
         print("Loading ADAPTERS")
         model = load_model_recursive(GPT2LMHeadModel(config,default_task_id=args.task_id), args.load_check_point_adapter, args, verbose=True)
     else:
-        model = load_model(GPT2LMHeadModel(config), args.model_path+f"{args.model_size}_ft.pkl", args, verbose=True)
+        model = load_model(
+            GPT2LMHeadModel(config),
+            f"{args.model_path}{args.model_size}_ft.pkl",
+            args,
+            verbose=True,
+        )
     model.to(device).eval()
 
     # Freeze Models weights
@@ -82,13 +87,13 @@ def run_model():
 
     classifier, class2idx = load_classifier(args, model)
 
-    logger = None
+    if args.evaluate:
+        logger = None
 
-    ## set iter to 0 to run the adapter 
-    ## set iter to 50 to run WD
-    param_grid = {'iter': [75], 'window': [0], 'steps': [0.02]}
+        ## set iter to 0 to run the adapter 
+        ## set iter to 50 to run WD
+        param_grid = {'iter': [75], 'window': [0], 'steps': [0.02]}
 
-    if(args.evaluate):
         evaluate(args,model,tokenizer,classifier,args.entailment,args.task_ent,class2idx,param_grid,device,logger)
     else:
         interact(args, model, tokenizer, classifier, class2idx, device)

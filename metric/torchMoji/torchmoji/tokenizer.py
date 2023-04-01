@@ -12,6 +12,7 @@ Recognises:
 
 Multiple consecutive symbols are also treated as a single token.
 '''
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
@@ -36,12 +37,12 @@ TITLES = [
     r'Prof\.',
     ]
 # Ensure case insensitivity
-RE_TITLES = r'|'.join([r'(?i)' + t for t in TITLES])
+RE_TITLES = r'|'.join([f'(?i){t}' for t in TITLES])
 
 # Symbols have to be created as separate patterns in order to match consecutive
 # identical symbols.
 SYMBOLS = r'()<!?.,/\'\"-_=\\§|´ˇ°[]<>{}~$^&*;:%+\xa3€`'
-RE_SYMBOL = r'|'.join([re.escape(s) + r'+' for s in SYMBOLS])
+RE_SYMBOL = r'|'.join([f'{re.escape(s)}+' for s in SYMBOLS])
 
 # Hash symbols and at symbols have to be defined separately in order to not
 # clash with hashtags and mentions if there are multiple - i.e.

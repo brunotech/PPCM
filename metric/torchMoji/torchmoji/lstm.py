@@ -90,7 +90,9 @@ class LSTMHardSigmoid(Module):
                                                         self.hidden_size).zero_(), requires_grad=False)
             hx = (hx, hx)
 
-        has_flat_weights = list(p.data.data_ptr() for p in self.parameters()) == self._data_ptrs
+        has_flat_weights = [
+            p.data.data_ptr() for p in self.parameters()
+        ] == self._data_ptrs
         if has_flat_weights:
             first_data = next(self.parameters()).data
             assert first_data.storage().size() == self._param_buf_size
@@ -144,10 +146,7 @@ class LSTMHardSigmoid(Module):
                 suffix = '_reverse' if direction == 1 else ''
                 weights = ['weight_ih_l{}{}', 'weight_hh_l{}{}', 'bias_ih_l{}{}', 'bias_hh_l{}{}']
                 weights = [x.format(layer, suffix) for x in weights]
-                if self.bias:
-                    self._all_weights += [weights]
-                else:
-                    self._all_weights += [weights[:2]]
+                self._all_weights += [weights] if self.bias else [weights[:2]]
 
     @property
     def all_weights(self):

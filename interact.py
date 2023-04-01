@@ -15,20 +15,18 @@ def top_k_logits(logits, k, probs=False):
     """
     if k == 0:
         return logits
-    else:
-        values = torch.topk(logits, k)[0]
-        batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
-        if probs:
-            return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
-        return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
+    values = torch.topk(logits, k)[0]
+    batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
+    if probs:
+        return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
+    return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
 
 def sample(model, args, classifier, context=None, past=None, device='cuda',
                        sample=True, repetition_penalty=1.0):
     output = torch.tensor(context, device=device, dtype=torch.long) if context else None
     output_response = output.new_zeros([output.size(0),0])
     stopped = [0 for _ in range(output.size(0))]
-    for i in range(args.length):
-
+    for _ in range(args.length):
         if past is None and output is not None:
             prev = output[:, -1:]
             _, past = model(output[:, :-1])
@@ -73,7 +71,7 @@ def interact(args,model,enc,classifier,class2idx,speaker,device,logger):
             raw_text = input("USR >>>")
         history.append(raw_text)
 
-        context_tokens = sum([enc.encode(h) + [EOS_ID] for h in history],[]) 
+        context_tokens = sum((enc.encode(h) + [EOS_ID] for h in history), [])
         context_tokens = [context_tokens for _ in range(args.num_samples)]
 
 

@@ -28,8 +28,7 @@ class Dataset(data.Dataset):
         self.y = y
 
     def __len__(self):
-        if(self.entailment): return len(self.X[0])
-        return len(self.X)
+        return len(self.X[0]) if self.entailment else len(self.X)
 
     def __getitem__(self, index):
         """Returns one data pair (source and target)."""
@@ -74,10 +73,7 @@ def collate_fn(data):
 
 
 def cached_collate_fn(data):
-    item_info = {}
-    for key in data[0].keys():
-        item_info[key] = [d[key] for d in data]
-
+    item_info = {key: [d[key] for d in data] for key in data[0].keys()}
     x_batch = torch.cat(item_info["X"], 0)
     y_batch = torch.tensor(item_info["y"], dtype=torch.long)
 
@@ -178,7 +174,7 @@ def get_cached_data_loader(dataset, batch_size, discriminator, entailment=False,
 
     xs = []
     ys = []
-    for batch_idx, (x, y) in enumerate(tqdm(data_loader, ascii=True)):
+    for x, y in tqdm(data_loader, ascii=True):
         with torch.no_grad():
             x = x.to(device)
             avg_rep = discriminator.avg_representation(x).cpu().detach()

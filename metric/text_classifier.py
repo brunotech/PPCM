@@ -36,7 +36,7 @@ def predict_class(model, tokenizer, sentence):
 def get_text_score_AGNEWS(sentences,l):
     idx2class = ["World","Sports","Business","SciTech"]
     class2idx = {c:i for i, c in enumerate(idx2class)}
-    idx2class = {i: c for i, c in enumerate(idx2class)}
+    idx2class = dict(enumerate(idx2class))
     pred = []
     acc = []
     for s in sentences:

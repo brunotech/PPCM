@@ -42,8 +42,7 @@ def get_loss(model, tokenizer, sentence, label):
     tensor = tensor.unsqueeze(0)
     label = torch.tensor([label], device='cuda', dtype=torch.long)
     output_t = model(tensor)
-    loss = ce_loss_logging(output_t, label).item()
-    return loss
+    return ce_loss_logging(output_t, label).item()
 
 # def predict_sentiment(model, tokenizer, sentence):
 #     model.eval()
@@ -58,9 +57,10 @@ def get_loss(model, tokenizer, sentence, label):
 
 def sentiment_analyzer_scores(sentence):
     score = analyser.polarity_scores(sentence)
-    if(score["compound"] >= 0.05): return 2
-    elif(score["compound"] > -0.05 and (score["compound"] < 0.05)): return 1
-    elif(score["compound"] <= -0.05): return 0
+    if (score["compound"] >= 0.05): return 2
+    elif score["compound"] > -0.05: return 1
+    else:
+        return 0
 
 def get_vater_score(sentences, l):
     lable = {"very negative":0,"very positive":2}

@@ -60,7 +60,7 @@ for rerun_iter in range(5):
 
         if FINETUNE_METHOD == 'last':
             extend_with = 0
-        elif FINETUNE_METHOD in ['new', 'full', 'chain-thaw']:
+        elif FINETUNE_METHOD in {'new', 'full', 'chain-thaw'}:
             extend_with = 10000
         else:
             raise ValueError('Finetuning method not recognised!')
@@ -81,7 +81,7 @@ for rerun_iter in range(5):
         print(model)
 
         # Training
-        print('Training: {}'.format(path))
+        print(f'Training: {path}')
         if use_f1_score:
             model, result = class_avg_finetune(model, data['texts'],
                                                data['labels'],
@@ -96,14 +96,10 @@ for rerun_iter in range(5):
 
         # Write results
         if use_f1_score:
-            print('Overall F1 score (dset = {}): {}'.format(dset, result))
-            with open('{}/{}_{}_{}_results.txt'.
-                      format(RESULTS_DIR, dset, FINETUNE_METHOD, rerun_iter),
-                      "w") as f:
-                f.write("F1: {}\n".format(result))
+            print(f'Overall F1 score (dset = {dset}): {result}')
+            with open(f'{RESULTS_DIR}/{dset}_{FINETUNE_METHOD}_{rerun_iter}_results.txt', "w") as f:
+                f.write(f"F1: {result}\n")
         else:
-            print('Test accuracy (dset = {}): {}'.format(dset, result))
-            with open('{}/{}_{}_{}_results.txt'.
-                      format(RESULTS_DIR, dset, FINETUNE_METHOD, rerun_iter),
-                      "w") as f:
-                f.write("Acc: {}\n".format(result))
+            print(f'Test accuracy (dset = {dset}): {result}')
+            with open(f'{RESULTS_DIR}/{dset}_{FINETUNE_METHOD}_{rerun_iter}_results.txt', "w") as f:
+                f.write(f"Acc: {result}\n")

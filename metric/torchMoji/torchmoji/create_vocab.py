@@ -33,7 +33,7 @@ class VocabBuilder():
             words: Tokenized sentence whose words should be counted.
         """
         for word in words:
-            if 0 < len(word) and len(word) <= self.word_length_limit:
+            if 0 < len(word) <= self.word_length_limit:
                 try:
                     self.word_counts[word] += 1
                 except KeyError:
@@ -46,7 +46,7 @@ class VocabBuilder():
             path: Where the vocabulary should be saved. If not specified, a
                   randomly generated filename is used instead.
         """
-        dtype = ([('word','|S{}'.format(self.word_length_limit)),('count','int')])
+        dtype = [('word', f'|S{self.word_length_limit}'), ('count','int')]
         np_dict = np.array(self.word_counts.items(), dtype=dtype)
 
         # sort from highest to lowest frequency
@@ -57,7 +57,7 @@ class VocabBuilder():
             path = str(uuid.uuid4())
 
         np.savez_compressed(path, data=data)
-        print("Saved dict to {}".format(path))
+        print(f"Saved dict to {path}")
 
     def get_next_word(self):
         """ Returns next tokenized sentence from the word geneerator.
@@ -97,7 +97,7 @@ class MasterVocab():
                 be present in vocab_path.
         """
 
-        paths = glob.glob(vocab_path + '*.npz')
+        paths = glob.glob(f'{vocab_path}*.npz')
         sizes = {path: 0 for path in paths}
         dicts = {path: {} for path in paths}
 
@@ -114,12 +114,12 @@ class MasterVocab():
                 dicts[path][word] = count
 
             sizes[path] = sum(dicts[path].values())
-            print('Overall word count for {} -> {}'.format(path, sizes[path]))
-            print('Overall word number for {} -> {}'.format(path, len(dicts[path])))
+            print(f'Overall word count for {path} -> {sizes[path]}')
+            print(f'Overall word number for {path} -> {len(dicts[path])}')
 
         vocab_of_max_size = max(sizes, key=sizes.get)
         max_size = sizes[vocab_of_max_size]
-        print('Min: {}, {}, {}'.format(sizes, vocab_of_max_size, max_size))
+        print(f'Min: {sizes}, {vocab_of_max_size}, {max_size}')
 
         # can force one vocabulary to always be present
         if force_appearance is not None:
@@ -132,7 +132,7 @@ class MasterVocab():
         # normalize word counts before inserting into master dict
         for path in paths:
             normalization_factor = max_size / sizes[path]
-            print('Norm factor for path {} -> {}'.format(path, normalization_factor))
+            print(f'Norm factor for path {path} -> {normalization_factor}')
 
             for word in dicts[path]:
                 if is_special_token(word):
@@ -154,9 +154,10 @@ class MasterVocab():
                 else:
                     self.master_vocab[word] = normalized_count
 
-        print('Size of master_dict {}'.format(len(self.master_vocab)))
-        print("Hashes for master dict: {}".format(
-            len([w for w in self.master_vocab if '#' in w[0]])))
+        print(f'Size of master_dict {len(self.master_vocab)}')
+        print(
+            f"Hashes for master dict: {len([w for w in self.master_vocab if '#' in w[0]])}"
+        )
 
     def save_vocab(self, path_count, path_vocab, word_limit=100000):
         """ Saves the master vocabulary into a file.
@@ -226,7 +227,7 @@ def extend_vocab_in_file(vocab, max_tokens=10000, vocab_path=VOCAB_PATH):
         with open(vocab_path, 'r') as f:
             current_vocab = json.load(f)
     except IOError:
-        print('Vocabulary file not found, expected at ' + vocab_path)
+        print(f'Vocabulary file not found, expected at {vocab_path}')
         return
 
     extend_vocab(current_vocab, vocab, max_tokens)

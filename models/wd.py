@@ -34,19 +34,17 @@ def top_k_logits(logits, k, probs=False):
     """
     if k == 0:
         return logits
-    else:
-        values = torch.topk(logits, k)[0]
-        batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
-        if probs:
-            return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
-        return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
+    values = torch.topk(logits, k)[0]
+    batch_mins = values[:, -1].view(-1, 1).expand_as(logits)
+    if probs:
+        return torch.where(logits < batch_mins, torch.ones_like(logits) * 0.0, logits)
+    return torch.where(logits < batch_mins, torch.ones_like(logits) * -1e10, logits)
 
 def get_greedy(args=None, true_hidden=None, model=None, output=None, classifier=None, good_index=None):
     
     if args.bag_of_words:
         logits, true_past = model(output)
         log_probs = F.softmax(logits[:, -1, :], dim=-1)
-        one_hot_vectors = []
         for good_list in good_index:
             good_list = list(filter(lambda x: len(x) <= 1, good_list))
             good_list = torch.tensor(good_list).cuda()
@@ -54,14 +52,13 @@ def get_greedy(args=None, true_hidden=None, model=None, output=None, classifier=
             one_hot_good = torch.zeros(num_good, vocab_size).cuda()
             one_hot_good.scatter_(1, good_list, 1)
             one_hot_good = torch.sum(one_hot_good, dim=0)
-        one_hot_vectors.append(one_hot_good)
-
+        one_hot_vectors = [one_hot_good]
         log_probs = log_probs + args.bow_scale_weight*one_hot_vectors[-1]*log_probs #+ args.bow_scale_weight*one_hot_vectors[-1]
         log_probs = top_k_logits(log_probs, k=args.top_k, probs=True)
         log_probs = log_probs/torch.sum(log_probs)
         # print(log_probs.shape)
-        prev = torch.multinomial(log_probs, num_samples=1)
-        # print(prev)
+        return torch.multinomial(log_probs, num_samples=1)
+            # print(prev)
     else:
         logits, true_past = model(output)
         # print("current sentence len",output.size())
@@ -74,7 +71,7 @@ def get_greedy(args=None, true_hidden=None, model=None, output=None, classifier=
         # print("non zero index",idx.size())
         # print("non zero index",idx)
         hidden = model.hidden_states
-        
+
         accumulated_hidden = torch.sum(hidden, dim=1)
 
         [_, _, _, current_length, _] = true_past[0].shape
@@ -88,7 +85,7 @@ def get_greedy(args=None, true_hidden=None, model=None, output=None, classifier=
         # print("logits for each candidate",logits.size())
         hidden = model.hidden_states
         # print("hidden for each candidate",hidden.size())
-        
+
         accumulated_mean_hidden = (torch.sum(hidden, dim=1) + accumulated_hidden)/(current_length + 1)
         # print("accumulated hidden for each candidate",accumulated_mean_hidden.size())
         attribute_logits = classifier(accumulated_mean_hidden)
@@ -106,12 +103,10 @@ def get_greedy(args=None, true_hidden=None, model=None, output=None, classifier=
         # print("weight non zero element",torch.nonzero(weight).split(1, dim=1)[1])
         rescaled_probs = log_probs+weight
         # print(rescaled_probs.size())
-        
+
         topk_rescaled_probs = top_k_logits(rescaled_probs, k=args.top_k, probs=True)
         topk_rescaled_probs = topk_rescaled_probs/torch.sum(topk_rescaled_probs, dim=-1)
-        prev = torch.multinomial(topk_rescaled_probs, num_samples=1) 
-  
-    return prev
+        return torch.multinomial(topk_rescaled_probs, num_samples=1)
 
 
 def weight_decoder(model, enc, args, context=None, sample=True, device='cuda',repetition_penalty=1.0,classifier=None,knowledge=None):
@@ -125,7 +120,7 @@ def weight_decoder(model, enc, args, context=None, sample=True, device='cuda',re
     def list_tokens(word_list,enc):
         token_list = []
         for word in word_list:
-            token_list.append(enc.encode(" " + word))
+            token_list.append(enc.encode(f" {word}"))
         return token_list
 
     good_index = []
@@ -137,7 +132,7 @@ def weight_decoder(model, enc, args, context=None, sample=True, device='cuda',re
                 words = f.read().strip()
                 words = words.split('\n')
             good_index.append(list_tokens(words,enc))
-            
+
         # useless for the process
         for good_list in good_index:
             good_list = list(filter(lambda x: len(x) <= 1, good_list))
@@ -182,8 +177,7 @@ def sample_from_hidden(model, args, classifier, context=None, past=None, device=
     loss_in_time = []
     loss_in_time_true_loss = []
     stopped = [0 for _ in range(output.size(0))]
-    for i in range(args.length):#, ascii=True):
-
+    for _ in range(args.length):
         # Get past/probs for current output, except for last word
         # Note that GPT takes 2 inputs: past + current-token
         # Therefore, use everything from before current i/p token to generate relevant past

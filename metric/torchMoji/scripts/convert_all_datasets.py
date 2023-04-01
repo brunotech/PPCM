@@ -53,7 +53,7 @@ def format_pickle(dset, train_texts, val_texts, test_texts, train_labels, val_la
             'test_labels': test_labels}
 
 def convert_dataset(filepath, extend_with, vocab):
-    print('-- Generating {} '.format(filepath))
+    print(f'-- Generating {filepath} ')
     sys.stdout.flush()
     st = SentenceTokenizer(vocab, maxlen)
     tokenized, dicts, _ = st.split_train_val_test(texts,
@@ -68,18 +68,18 @@ def convert_dataset(filepath, extend_with, vocab):
         pickle.dump(pick, f)
     cover = coverage(tokenized[2])
 
-    print('     done. Coverage: {}'.format(cover))
+    print(f'     done. Coverage: {cover}')
 
 with open('../model/vocabulary.json', 'r') as f:
     vocab = json.load(f)
 
 for dset in DATASETS:
-    print('Converting {}'.format(dset))
+    print(f'Converting {dset}')
 
-    PATH_RAW = '{}/{}/{}'.format(DIR, dset, FILENAME_RAW)
-    PATH_OWN = '{}/{}/{}'.format(DIR, dset, FILENAME_OWN)
-    PATH_OUR = '{}/{}/{}'.format(DIR, dset, FILENAME_OUR)
-    PATH_COMBINED = '{}/{}/{}'.format(DIR, dset, FILENAME_COMBINED)
+    PATH_RAW = f'{DIR}/{dset}/{FILENAME_RAW}'
+    PATH_OWN = f'{DIR}/{dset}/{FILENAME_OWN}'
+    PATH_OUR = f'{DIR}/{dset}/{FILENAME_OUR}'
+    PATH_COMBINED = f'{DIR}/{dset}/{FILENAME_COMBINED}'
 
     with open(PATH_RAW, 'rb') as dataset:
         if IS_PYTHON2:

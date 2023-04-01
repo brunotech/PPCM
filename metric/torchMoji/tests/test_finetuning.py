@@ -115,7 +115,7 @@ def test_relabel_binary():
 def test_finetune_full():
     """ finetuning using 'full'.
     """
-    DATASET_PATH = ROOT_PATH+'/data/SS-Youtube/raw.pickle'
+    DATASET_PATH = f'{ROOT_PATH}/data/SS-Youtube/raw.pickle'
     nb_classes = 2
     # Keras and pyTorch implementation of the Adam optimizer are slightly different and change a bit the results
     # We reduce the min accuracy needed here to pass the test
@@ -126,13 +126,13 @@ def test_finetune_full():
         vocab = json.load(f)
 
     data = load_benchmark(DATASET_PATH, vocab, extend_with=10000)
-    print('Loading pyTorch model from {}.'.format(PRETRAINED_PATH))
+    print(f'Loading pyTorch model from {PRETRAINED_PATH}.')
     model = torchmoji_transfer(nb_classes, PRETRAINED_PATH, extend_embedding=data['added'])
     print(model)
     model, acc = finetune(model, data['texts'], data['labels'], nb_classes,
                           data['batch_size'], method='full', nb_epochs=1)
 
-    print("Finetune full SS-Youtube 1 epoch acc: {}".format(acc))
+    print(f"Finetune full SS-Youtube 1 epoch acc: {acc}")
     assert acc >= min_acc
 
 
@@ -140,7 +140,7 @@ def test_finetune_full():
 def test_finetune_last():
     """ finetuning using 'last'.
     """
-    dataset_path = ROOT_PATH + '/data/SS-Youtube/raw.pickle'
+    dataset_path = f'{ROOT_PATH}/data/SS-Youtube/raw.pickle'
     nb_classes = 2
     min_acc = 0.68
 
@@ -148,13 +148,13 @@ def test_finetune_last():
         vocab = json.load(f)
 
     data = load_benchmark(dataset_path, vocab)
-    print('Loading model from {}.'.format(PRETRAINED_PATH))
+    print(f'Loading model from {PRETRAINED_PATH}.')
     model = torchmoji_transfer(nb_classes, PRETRAINED_PATH)
     print(model)
     model, acc = finetune(model, data['texts'], data['labels'], nb_classes,
                           data['batch_size'], method='last', nb_epochs=1)
 
-    print("Finetune last SS-Youtube 1 epoch acc: {}".format(acc))
+    print(f"Finetune last SS-Youtube 1 epoch acc: {acc}")
 
     assert acc >= min_acc
 
@@ -223,7 +223,7 @@ def test_encode_texts():
 
     st = SentenceTokenizer(vocabulary, maxlen)
 
-    print('Loading model from {}.'.format(PRETRAINED_PATH))
+    print(f'Loading model from {PRETRAINED_PATH}.')
     model = torchmoji_feature_encoding(PRETRAINED_PATH)
     print(model)
     tokenized, _, _ = st.tokenize_sentences(TEST_SENTENCES)

@@ -26,12 +26,17 @@ class Discriminator(torch.nn.Module):
         model_path = f'models/dialoGPT/{pretrained_model}/'
         config = GPT2Config.from_json_file(os.path.join(model_path, 'config.json'))
         self.tokenizer = GPT2Tokenizer.from_pretrained(model_path)
-        if model_pretrained != None:
-            self.encoder = model_pretrained
+        if model_pretrained is None:
+            self.encoder = load_model(
+                GPT2LMHeadModel(config),
+                f"{model_path}{pretrained_model}_ft.pkl",
+                None,
+                verbose=True,
+            )
         else:
-            self.encoder = load_model(GPT2LMHeadModel(config), model_path+f"{pretrained_model}_ft.pkl", None, verbose=True)
+            self.encoder = model_pretrained
         self.embed_size = config.n_embd
-        
+
         if(self.entailment):
             self.classifier_head = AttentionHead(class_size=class_size, embed_size=self.embed_size)
         else:
@@ -59,28 +64,25 @@ class Discriminator(torch.nn.Module):
         ).float().to(self.device).detach()
         hidden, _ = self.encoder.transformer(x)
         masked_hidden = hidden * mask
-        if(entailment):
+        if entailment:
             return masked_hidden
         else:
-            avg_hidden = torch.sum(masked_hidden, dim=1) / (
-                    torch.sum(mask, dim=1).detach() + EPSILON
+            return torch.sum(masked_hidden, dim=1) / (
+                torch.sum(mask, dim=1).detach() + EPSILON
             )
-            return avg_hidden
 
     def forward(self, x):
-        if(self.entailment):
+        if self.entailment:
             P = self.avg_representation(x[0].to(self.device),entailment=True)
             H = self.avg_representation(x[1].to(self.device),entailment=True)
-            logits = self.classifier_head(P,H)
-            return logits
+            return self.classifier_head(P,H)
         else:
-            if self.cached_mode:
-                avg_hidden = x.to(self.device)
-            else:
-                avg_hidden = self.avg_representation(x.to(self.device))
-
-            logits = self.classifier_head(avg_hidden)
-            return logits
+            avg_hidden = (
+                x.to(self.device)
+                if self.cached_mode
+                else self.avg_representation(x.to(self.device))
+            )
+            return self.classifier_head(avg_hidden)
 
 
 class Scorer(torch.nn.Module):
@@ -117,28 +119,22 @@ class Scorer(torch.nn.Module):
     def forward(self, text):
         
         #text = [batch size, sent len]
-                
+
         with torch.no_grad():
             embedded = self.bert(text)[0]
-                
+
         #embedded = [batch size, sent len, emb dim]
-        
+
         _, hidden = self.rnn(embedded)
-        
+
         #hidden = [n layers * n directions, batch size, emb dim]
-        
+
         if self.rnn.bidirectional:
             hidden = self.dropout(torch.cat((hidden[-2,:,:], hidden[-1,:,:]), dim = 1))
         else:
             hidden = self.dropout(hidden[-1,:,:])
-                
-        #hidden = [batch size, hid dim]
-        
-        output = self.out(hidden)
-        
-        #output = [batch size, out dim]
-        
-        return output
+
+        return self.out(hidden)
 
 
 class AttentionHead(nn.Module):
@@ -160,13 +156,12 @@ class AttentionHead(nn.Module):
         self.final_linear = nn.Linear(self.embed_size, self.class_size)
 
     def _mlp_layers(self, input_dim, output_dim):
-        mlp_layers = []
-        mlp_layers.append(nn.Dropout(p=0.2))
+        mlp_layers = [nn.Dropout(p=0.2)]
         mlp_layers.append(nn.Linear(input_dim, output_dim))
         mlp_layers.append(nn.ReLU())
         mlp_layers.append(nn.Dropout(p=0.2))
         mlp_layers.append(nn.Linear(output_dim, output_dim))
-        mlp_layers.append(nn.ReLU())        
+        mlp_layers.append(nn.ReLU())
         return nn.Sequential(*mlp_layers)   # * used to unpack list
 
     def forward(self, sent1_linear, sent2_linear):
@@ -236,19 +231,18 @@ class ClassificationHead(torch.nn.Module):
         self.mlp = torch.nn.Linear(embed_size, class_size)
 
     def forward(self, hidden_state):
-        logits = self.mlp(hidden_state)
-        return logits
+        return self.mlp(hidden_state)
 
 
 def load_model(model, checkpoint, args, verbose=False):
     if checkpoint is None or checkpoint == "None":
         if verbose:
-            print('No checkpoint provided for %s!' % model._get_name())
+            print(f'No checkpoint provided for {model._get_name()}!')
     else:
         if not os.path.exists(checkpoint):
-            raise ValueError('checkpoint %s not exist' % checkpoint)
+            raise ValueError(f'checkpoint {checkpoint} not exist')
         if verbose:
-            print('Loading finetuned model from %s' % checkpoint)
+            print(f'Loading finetuned model from {checkpoint}')
         model_state_dict = torch.load(checkpoint)
 
         model_state_dict = fix_state_dict_namespace(model_state_dict)

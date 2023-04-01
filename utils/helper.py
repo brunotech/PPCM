@@ -23,7 +23,7 @@ def load_classifier(args,model):
     classifier = None
     class2idx = None
     idx2class = ["positive", "negative", "very positive", "very negative", "neutral"]
-    
+
     if args.discrim == 'sentiment':
         class2idx = {c: i for i, c in enumerate(idx2class)}
         classes_num = len(idx2class)
@@ -65,9 +65,9 @@ def load_classifier(args,model):
         classifier.eval()
 
 
-  
 
-    class2idx = {i: c for i, c in enumerate(idx2class)}
+
+    class2idx = dict(enumerate(idx2class))
     return classifier, class2idx
 
 
@@ -75,12 +75,12 @@ def load_classifier(args,model):
 def load_model(model, checkpoint, args, verbose=False):
     if checkpoint is None or checkpoint == "None":
         if verbose:
-            print('No checkpoint provided for %s!' % model._get_name())
+            print(f'No checkpoint provided for {model._get_name()}!')
     else:
         if not os.path.exists(checkpoint):
-            raise ValueError('checkpoint %s not exist' % checkpoint)
+            raise ValueError(f'checkpoint {checkpoint} not exist')
         if verbose:
-            print('Loading finetuned model from %s' % checkpoint)
+            print(f'Loading finetuned model from {checkpoint}')
         model_state_dict = torch.load(checkpoint)
 
         model_state_dict = fix_state_dict_namespace(model_state_dict)
@@ -99,12 +99,12 @@ def load_model(model, checkpoint, args, verbose=False):
 def load_model_recursive(model, checkpoint, args, verbose=False):
     if checkpoint is None or checkpoint == "None":
         if verbose:
-            print('No checkpoint provided for %s!' % model._get_name())
+            print(f'No checkpoint provided for {model._get_name()}!')
     else:
         if not os.path.exists(checkpoint):
-            raise ValueError('checkpoint %s not exist' % checkpoint)
+            raise ValueError(f'checkpoint {checkpoint} not exist')
         if verbose:
-            print('Loading finetuned model from %s' % checkpoint)
+            print(f'Loading finetuned model from {checkpoint}')
         model_state_dict = torch.load(checkpoint)
 
         model_state_dict = fix_state_dict_namespace(model_state_dict)
@@ -115,7 +115,7 @@ def load_model_recursive(model, checkpoint, args, verbose=False):
                     for s in model_state_dict.keys())):
             print('Loading transfomer only')
             start_model = model.transformer
-        
+
 
         missing_keys = []
         unexpected_keys = []
@@ -135,31 +135,32 @@ def load_model_recursive(model, checkpoint, args, verbose=False):
         if model.__class__.__name__ != start_model.__class__.__name__:
             base_model_state_dict = start_model.state_dict().keys()
             head_model_state_dict_without_base_prefix = [
-                key.split(cls.base_model_prefix + ".")[-1] for key in model.state_dict().keys()
+                key.split(f"{cls.base_model_prefix}.")[-1]
+                for key in model.state_dict().keys()
             ]
 
             missing_keys.extend(head_model_state_dict_without_base_prefix - base_model_state_dict)
 
-        if len(missing_keys) > 0:
+        if missing_keys:
             logger.info(
                 "Weights of {} not initialized from pretrained model: {}".format(
                     model.__class__.__name__, missing_keys
                 )
             )
-        if len(unexpected_keys) > 0:
+        if unexpected_keys:
             logger.info(
                 "Weights from pretrained model not used in {}: {}".format(
                     model.__class__.__name__, unexpected_keys
                 )
             )
-        if len(error_msgs) > 0:
+        if error_msgs:
             raise RuntimeError(
                 "Error(s) in loading state_dict for {}:\n\t{}".format(
                     model.__class__.__name__, "\n\t".join(error_msgs)
                 )
             )
 
-        #model.tie_weights()
+            #model.tie_weights()
     return model
 
 
@@ -197,9 +198,7 @@ def dist_score(s,enc):
     else: return 0
     
 def truncate(f, n):
-    if math.isnan(f):
-        return f
-    return math.floor(f * 10 ** n) / 10 ** n
+    return f if math.isnan(f) else math.floor(f * 10 ** n) / 10 ** n
 
 def pad_sequences(sequences):
     lengths = [len(seq) for seq in sequences]
@@ -231,7 +230,7 @@ def print_loss_matplotlib(plots_array,loss_original,str_title,logger,name):
 
 def parse_prefixes(args, tokenizer=None, entailment=False, seed=1234, task='data/simple_QA/QA.json'):
     list_starters = []
-    if(entailment):
+    if entailment:
         cnt = 0
         with open(task) as json_file:
             data = json.load(json_file)
@@ -259,18 +258,18 @@ def parse_prefixes(args, tokenizer=None, entailment=False, seed=1234, task='data
                             _, text_turn = d.split("Human 2: ")
                             conversation.append({"turn":i,"speaker":"Human 2","text":text_turn.strip('\n').strip()})
                         i += 1
-        
+
         random.seed(seed)
-        if(args.all_starter): 
+        if args.all_starter: 
             conversation = data
-            for i_c,conv in enumerate(conversation):
+            for conv in conversation:
                 for index in range(len(conv)-2):
                     history = [conv[index]["text"],conv[index+1]["text"]]
-                    context_tokens = len(sum([tokenizer.encode(h) + [1111] for h in history],[]))
+                    context_tokens = len(sum((tokenizer.encode(h) + [1111] for h in history), []))
                     if(context_tokens <= 70):
                         list_starters.append({"conversation":[conv[index]["text"],conv[index+1]["text"]],"knowledge":None,"gold":None})
-                    # else:
-                    #     print(f"Skipped len {context_tokens} index=({i_c},{index})")
+                                    # else:
+                                    #     print(f"Skipped len {context_tokens} index=({i_c},{index})")
             if(args.sample_starter!=0):
                 list_starters = list_starters[:args.sample_starter+1]
         else:
@@ -301,7 +300,4 @@ def make_logdir(args):
     """Create unique path to save results and checkpoints, e.g. runs/Sep22_19-45-59_gpu-7_gpt2"""
     # Code copied from ignite repo
     current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    # logdir = os.path.join('runs', current_time + '_' + socket.gethostname() + '_' + model_name)
-    logdir = os.path.join('runs', f'{args.dataset}_{args.label}_{current_time}') #  current_time + '_' + socket.gethostname() + '_' + model_name)
-    
-    return logdir
+    return os.path.join('runs', f'{args.dataset}_{args.label}_{current_time}')

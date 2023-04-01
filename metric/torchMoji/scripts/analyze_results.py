@@ -13,10 +13,12 @@ if len(sys.argv) == 3:
     METHOD = sys.argv[2]
 
 RESULTS_DIR = 'results/'
-RESULT_PATHS = glob.glob('{}/{}_{}_*_results.txt'.format(RESULTS_DIR, DATASET, METHOD))
+RESULT_PATHS = glob.glob(f'{RESULTS_DIR}/{DATASET}_{METHOD}_*_results.txt')
 
 if not RESULT_PATHS:
-    print('Could not find results for \'{}\' using \'{}\' in directory \'{}\'.'.format(DATASET, METHOD, RESULTS_DIR))
+    print(
+        f"Could not find results for \'{DATASET}\' using \'{METHOD}\' in directory \'{RESULTS_DIR}\'."
+    )
 else:
     scores = []
     for path in RESULT_PATHS:
@@ -29,11 +31,11 @@ else:
     minimum = min(scores)
     std = np.std(scores)
 
-    print('Dataset: {}'.format(DATASET))
-    print('Method:  {}'.format(METHOD))
-    print('Number of results: {}'.format(len(scores)))
+    print(f'Dataset: {DATASET}')
+    print(f'Method:  {METHOD}')
+    print(f'Number of results: {len(scores)}')
     print('--------------------------')
-    print('Average: {}'.format(average))
-    print('Maximum: {}'.format(maximum))
-    print('Minimum: {}'.format(minimum))
-    print('Standard deviaton: {}'.format(std))
+    print(f'Average: {average}')
+    print(f'Maximum: {maximum}')
+    print(f'Minimum: {minimum}')
+    print(f'Standard deviaton: {std}')
